@@ -1017,21 +1017,21 @@ function updateShippingCode($user, $password, $version, $shippingData, $orderNum
 function updateInvoiceData($user, $password, $version, $invoiceData, $orderNumberField) {
 	if (! testUser($user, $password, $version)) {
 		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
-	} else {
-		if (isset($orderNumberField)) {
-			$invoiceData = json_decode($invoiceData);
-			$resultOrderStatus = sql_getOrderStatusIdByStatusName($invoiceData->order_status);
-			$orderStatusId = $resultOrderStatus[0]["statusId"];
-			if (empty($orderStatusId)) {
-				return json_encode(["result" => "Error", "errorDetails" => "Situação do pedido {$invoiceData["order_status"]} não encontrada."]);
-			}
-			sql_updateInvoiceData($orderNumberField, $orderStatusId, $invoiceData->invoiceUrl);
-
-			return json_encode(["result" => "Ok"]);
-		} else {
-			return json_encode(["result" => "Error", "errorDetails" => "Número do pedido não passado como parametro."]);
-		}
 	}
+
+	if (!isset($orderNumberField)) {
+		return json_encode(["result" => "Error", "errorDetails" => "Número do pedido não passado como parametro."]);
+	}
+
+	$invoiceData = json_decode($invoiceData);
+	$resultOrderStatus = sql_getOrderStatusIdByStatusName($invoiceData->order_status);
+	$orderStatusId = $resultOrderStatus[0]["statusId"];
+	if (empty($orderStatusId)) {
+		return json_encode(["result" => "Error", "errorDetails" => "Situação do pedido {$invoiceData["order_status"]} não encontrada."]);
+	}
+	sql_updateInvoiceData($orderNumberField, $orderStatusId, $invoiceData->invoiceUrl);
+
+	return json_encode(["result" => "Ok"]);
 }
 
 function updateOrderStatus($user, $password, $version, $orderData) {
