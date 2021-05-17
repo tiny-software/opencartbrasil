@@ -1,8 +1,9 @@
 <?php
+
 error_reporting(0);
 ini_set("display_errors", "0");
 
-/* 
+/*
  * Tiny OpenCart: Integration Module
  * Copyright (C) 2012  Tiny Software
  *
@@ -20,8 +21,8 @@ ini_set("display_errors", "0");
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-require_once ("config.php");
-require_once (DIR_SYSTEM . "startup.php");
+require_once "config.php";
+require_once DIR_SYSTEM . "startup.php";
 
 switch ($_REQUEST["method"]) {
 	case "listOrders":
@@ -58,17 +59,21 @@ switch ($_REQUEST["method"]) {
 		print_r(updateShippingCode($_REQUEST["user"], $_REQUEST["password"], $_REQUEST["version"], $_REQUEST["shippingData"], $_REQUEST["orderNumberField"]));
 		break;
 	case "updateOrderStatus":
-	    print_r(updateOrderStatus($_REQUEST["user"], $_REQUEST["password"], $_REQUEST["version"], $_REQUEST["orderData"]));
+		print_r(updateOrderStatus($_REQUEST["user"], $_REQUEST["password"], $_REQUEST["version"], $_REQUEST["orderData"]));
+		break;
+	case "updateInvoiceData":
+		print_r(updateInvoiceData($_REQUEST["user"], $_REQUEST["password"], $_REQUEST["version"], $_REQUEST["invoiceData"], $_REQUEST["orderNumberField"]));
 		break;
 	case "setProductPrice":
 		print_r(setProductPrice($_REQUEST["user"], $_REQUEST["password"], $_REQUEST["version"], $_REQUEST["productData"], $_REQUEST["productCodeField"]));
 		break;
 	default:
-		print_r(json_encode(array("result" => "Error", "errorDetails" => "Método inválido ou não informado.")));
+		print_r(json_encode(["result" => "Error", "errorDetails" => "Método inválido ou não informado."]));
 }
 
 // === Classes ============================================================================
 class Order {
+
 	public $id;
 	public $client;
 	public $payment_method;
@@ -85,8 +90,8 @@ class Order {
 	public $payment_address;
 	public $shipping_method;
 	public $shipping_code;
-	
-	function __construct($id, $date, $payment_method, $total, $status, $comment, $freight, $discount, $payment_code = "", $transaction_id = "", $shipping_method = "", $shipping_code = "") {
+
+	public function __construct($id, $date, $payment_method, $total, $status, $comment, $freight, $discount, $payment_code = "", $transaction_id = "", $shipping_method = "", $shipping_code = "") {
 		$this->id = $id;
 		$this->date = $date;
 		$this->payment_method = $payment_method;
@@ -99,74 +104,80 @@ class Order {
 		$this->transaction_id = $transaction_id;
 		$this->shipping_method = $shipping_method;
 		$this->shipping_code = $shipping_code;
-		$this->items = array();
+		$this->items = [];
 	}
-	
+
 	public function setClient(Client $client) {
 		$this->client = $client;
 	}
-	
+
 	public function setShippingAddress(Address $address) {
 		$this->shipping_address = $address;
 	}
-	
+
 	public function setPaymentAddress(Address $address) {
 		$this->payment_address = $address;
 	}
-	
+
 	public function addItem(Item $item) {
 		$this->items[] = $item;
 	}
+
 }
 
 class Item {
+
 	public $product;
 	public $quantity;
 	public $price;
 	public $total;
-	
-	function __construct(Product $product, $quantity, $price, $total) {
+
+	public function __construct(Product $product, $quantity, $price, $total) {
 		$this->product = $product;
 		$this->quantity = $quantity;
 		$this->price = $price;
 		$this->total = $total;
 	}
+
 }
 
 class Client {
+
 	public $name;
 	public $mail;
 	public $phone;
 	public $phone2;
 	public $address;
 	public $aditionalFields;
-	
-	function __construct($firstName, $lastName, $mail, $phone, $phone2) {
+
+	public function __construct($firstName, $lastName, $mail, $phone, $phone2) {
 		$this->name = $firstName . " " . $lastName;
 		$this->mail = $mail;
 		$this->phone = $phone;
 		$this->phone2 = $phone2;
-		$aditionalFields = array();
+		$aditionalFields = [];
 	}
-	
+
 	public function setAddress(Address $address) {
 		$this->address = $address;
 	}
-	
+
 	public function addAditionalField($key, $value) {
 		$this->aditionalFields[$key] = $value;
 	}
+
 }
 
 class Address {
+
 	public $address;
 	public $neighborhood;
 	public $city;
 	public $postcode;
 	public $country;
 	public $state;
-	
-	function __construct($address, $neighborhood, $city, $postcode, $country, $state) {
+
+	public function __construct($address, $neighborhood, $city, $postcode, $country, $state) {
 		$this->address = $address;
 		$this->neighborhood = $neighborhood;
 		$this->city = $city;
@@ -174,9 +185,11 @@ class Address {
 		$this->country = $country;
 		$this->state = $state;
 	}
+
 }
 
 class Product {
+
 	public $name;
 	public $name_and_options;
 	public $model;
@@ -187,8 +200,8 @@ class Product {
 	public $aditionalFields;
 	public $categories;
 	public $special_price;
-	
-	function __construct($name, $name_and_options, $model, $id = null, $price = null, $stock_quantity = null, $weight = null, $categories = array(), $special_price = 0) {
+
+	public function __construct($name, $name_and_options, $model, $id = null, $price = null, $stock_quantity = null, $weight = null, $categories = [], $special_price = 0) {
 		$this->name = $name;
 		$this->name_and_options = $name_and_options;
 		$this->model = $model;
@@ -198,18 +211,19 @@ class Product {
 		$this->weight = $weight;
 		$this->categories = $categories;
 		$this->special_price = $special_price;
-		$aditionalFields = array();
+		$aditionalFields = [];
 	}
-	
+
 	public function addAditionalField($key, $value) {
 		$this->aditionalFields[$key] = $value;
 	}
+
 }
 
 // === SQLs ============================================================================
 function sql_getUser($user, $password, $version) {
 	$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
-	
+
 	switch ($version) {
 		case "1.5.1":
 		case "1.5.2":
@@ -249,9 +263,18 @@ function sql_getOrders($status, $initialDate, $finalDate, $criteriaDate = "added
 
 function sql_getOrderStatus() {
 	$languageId = sql_getLanguageId();
-	
+
 	$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
 	$sql = "SELECT s.name AS 'status' FROM `" . DB_PREFIX . "order_status` s WHERE s.language_id = '" . $languageId . "' ORDER BY s.name";
+	$query = $db->query($sql);
+	return $query->rows;
+}
+
+function sql_getOrderStatusIdByStatusName($statusName) {
+	$languageId = sql_getLanguageId();
+
+	$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
+	$sql = "SELECT s.id AS 'statusId' FROM `" . DB_PREFIX . "order_status` s WHERE s.language_id = '" . $languageId . "' AND LOWER(s.name) = LOWER('" . $statusName . "') LIMIT 1";
 	$query = $db->query($sql);
 	return $query->rows;
 }
@@ -264,7 +287,7 @@ function sql_getCustomer($customerId) {
 
 function sql_getOrder($orderId) {
 	$languageId = sql_getLanguageId();
-	
+
 	$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
 	$query = $db->query("SELECT o.*, s.name AS 'status' FROM `" . DB_PREFIX . "order` o LEFT JOIN `" . DB_PREFIX . "order_status` s ON o.order_status_id = s.order_status_id WHERE o.order_id = '" . $orderId . "' AND s.language_id = '" . $languageId . "'");
 	return $query->rows;
@@ -340,26 +363,26 @@ function sql_addCategory($data) {
 	// admin/model/catalog/category.php, addCategory
 	$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
 
-	$db->query("INSERT INTO " . DB_PREFIX . "category SET parent_id = '" . (int)$data['parent_id'] . "', `top` = '" . (((int)$data['parent_id'] > 0) ? 0 : 1) . "', `column` = '0', sort_order = '0', status = '1', date_modified = NOW(), date_added = NOW()");
+	$db->query("INSERT INTO " . DB_PREFIX . "category SET parent_id = '" . (int) $data['parent_id'] . "', `top` = '" . (((int) $data['parent_id'] > 0) ? 0 : 1) . "', `column` = '0', sort_order = '0', status = '1', date_modified = NOW(), date_added = NOW()");
 
 	$categoryId = $db->getLastId();
 
 	foreach ($data['category_description'] as $languageId => $value) {
-		$db->query("INSERT INTO " . DB_PREFIX . "category_description SET category_id = '" . (int)$categoryId . "', language_id = '" . (int)$languageId . "', name = '" . $db->escape($value['name']) . "', description = '" . $db->escape($value['name']) . "'");
+		$db->query("INSERT INTO " . DB_PREFIX . "category_description SET category_id = '" . (int) $categoryId . "', language_id = '" . (int) $languageId . "', name = '" . $db->escape($value['name']) . "', description = '" . $db->escape($value['name']) . "'");
 	}
 
 	// MySQL Hierarchical Data Closure Table Pattern
-	$query = $db->query("SELECT * FROM `" . DB_PREFIX . "category_path` WHERE category_id = '" . (int)$data['parent_id'] . "' ORDER BY `level` ASC");
+	$query = $db->query("SELECT * FROM `" . DB_PREFIX . "category_path` WHERE category_id = '" . (int) $data['parent_id'] . "' ORDER BY `level` ASC");
 
 	$level = 0;
 	foreach ($query->rows as $result) {
-		$db->query("INSERT INTO `" . DB_PREFIX . "category_path` SET `category_id` = '" . (int)$categoryId . "', `path_id` = '" . (int)$result['path_id'] . "', `level` = '" . (int)$level . "'");
+		$db->query("INSERT INTO `" . DB_PREFIX . "category_path` SET `category_id` = '" . (int) $categoryId . "', `path_id` = '" . (int) $result['path_id'] . "', `level` = '" . (int) $level . "'");
 		$level++;
 	}
 
-	$db->query("INSERT INTO `" . DB_PREFIX . "category_path` SET `category_id` = '" . (int)$categoryId . "', `path_id` = '" . (int)$categoryId . "', `level` = '" . (int)$level . "'");
+	$db->query("INSERT INTO `" . DB_PREFIX . "category_path` SET `category_id` = '" . (int) $categoryId . "', `path_id` = '" . (int) $categoryId . "', `level` = '" . (int) $level . "'");
 
-	$db->query("INSERT INTO " . DB_PREFIX . "category_to_store SET category_id = '" . (int)$categoryId . "', store_id = '0'");
+	$db->query("INSERT INTO " . DB_PREFIX . "category_to_store SET category_id = '" . (int) $categoryId . "', store_id = '0'");
 
 	return $categoryId;
 }
@@ -382,7 +405,7 @@ function sql_getCategoryByName($categoryName, $parentId) {
 
 function sql_getProducts() {
 	$languageId = sql_getLanguageId();
-	
+
 	$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
 	$query = $db->query("SELECT p.product_id, pd.name, p.model, p.sku, p.quantity, p.price, p.weight, p.* FROM `" . DB_PREFIX . "product` p JOIN `" . DB_PREFIX . "product_description` pd ON p.product_id = pd.product_id WHERE pd.language_id = '" . $languageId . "' ORDER BY pd.name");
 	return $query->rows;
@@ -405,28 +428,34 @@ function sql_getOrderProductOptions($order_product_id) {
 
 function sql_getProductOptions($productId) {
 	$languageId = sql_getLanguageId();
-	
+
 	$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
 	$query = $db->query("SELECT o.option_id, o.quantity, o.price, o.weight, d.name, t.sort_order FROM `" . DB_PREFIX . "product_option_value` o JOIN `" . DB_PREFIX . "option_value_description` d ON o.option_value_id = d.option_value_id JOIN `" . DB_PREFIX . "option` t ON o.option_id = t.option_id WHERE o.product_id = '" . $productId . "' AND d.language_id = '" . $languageId . "' ORDER BY t.sort_order");
 	return $query->rows;
 }
 
 function sql_getOrderTotal($orderId) {
-    $db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
-    $query = $db->query("SELECT `value`, '0' AS shipping FROM `" . DB_PREFIX . "order_total` WHERE order_id = '" . $orderId . "' AND code <> 'coupon' UNION SELECT ch.amount, c.shipping FROM `" . DB_PREFIX . "coupon_history` ch JOIN `" . DB_PREFIX . "coupon` c ON ch.coupon_id = c.coupon_id WHERE ch.order_id = '" . $orderId . "'");
-    return $query->rows;
+	$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
+	$query = $db->query("SELECT `value`, '0' AS shipping FROM `" . DB_PREFIX . "order_total` WHERE order_id = '" . $orderId . "' AND code <> 'coupon' UNION SELECT ch.amount, c.shipping FROM `" . DB_PREFIX . "coupon_history` ch JOIN `" . DB_PREFIX . "coupon` c ON ch.coupon_id = c.coupon_id WHERE ch.order_id = '" . $orderId . "'");
+	return $query->rows;
 }
 
 function sql_updateShippingCode($shippingData) {
 	$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
-    $db->query("UPDATE `" . DB_PREFIX . "order` SET shipping_method = '" . $shippingData->shipping_method . "', shipping_code = '" . $shippingData->shipping_code . "', order_status_id = '3' WHERE order_id = '" . $shippingData->orderId . "';");
-    $db->query("INSERT INTO `" . DB_PREFIX . "order_history` SET order_id = '" . $shippingData->orderId . "', order_status_id = '3', notify = '0', comment = 'Código de Rastreio: " . $shippingData->shipping_code ."', date_added = NOW()");
+	$db->query("UPDATE `" . DB_PREFIX . "order` SET shipping_method = '" . $shippingData->shipping_method . "', shipping_code = '" . $shippingData->shipping_code . "', order_status_id = '3' WHERE order_id = '" . $shippingData->orderId . "';");
+	$db->query("INSERT INTO `" . DB_PREFIX . "order_history` SET order_id = '" . $shippingData->orderId . "', order_status_id = '3', notify = '0', comment = 'Código de Rastreio: " . $shippingData->shipping_code . "', date_added = NOW()");
+}
+
+function sql_updateInvoiceData($orderId, $orderStatusId, $invoiceUrl) {
+	$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
+	$db->query("UPDATE `" . DB_PREFIX . "order` SET order_status_id = '" . $orderStatusId . "' WHERE order_id = '" . $orderId . "';");
+	$db->query("INSERT INTO `" . DB_PREFIX . "order_history` SET order_id = '" . $orderId . "', order_status_id = '" . $orderStatusId . "', notify = '0', comment = 'Link de acesso à nota fiscal: " . $invoiceUrl . "', date_added = NOW()");
 }
 
 function sql_updateOrderStatus($orderData) {
 	$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
-    $db->query("UPDATE `" . DB_PREFIX . "order` SET order_status_id = '" . $orderData->order_status_id . "' WHERE order_id = '" . $orderData->order_id . "';");
-    $db->query("INSERT INTO `" . DB_PREFIX . "order_history` SET order_id = '" . $orderData->order_id . "', order_status_id = '" . $orderData->order_status_id . "', notify = '0', comment = '', date_added = NOW()");
+	$db->query("UPDATE `" . DB_PREFIX . "order` SET order_status_id = '" . $orderData->order_status_id . "' WHERE order_id = '" . $orderData->order_id . "';");
+	$db->query("INSERT INTO `" . DB_PREFIX . "order_history` SET order_id = '" . $orderData->order_id . "', order_status_id = '" . $orderData->order_status_id . "', notify = '0', comment = '', date_added = NOW()");
 }
 
 function sql_insertUpdateProduct($data, $version) {
@@ -443,24 +472,24 @@ function sql_insertUpdateProduct($data, $version) {
 
 		$dimensions = "";
 		if (isset($data["length"], $data["width"], $data["height"])) {
-			$dimensions = ", length = '" . (float)$data["length"] . "', width = '" . (float)$data["width"] . "', height = '" . (float)$data["height"] . "' ";
+			$dimensions = ", length = '" . (float) $data["length"] . "', width = '" . (float) $data["width"] . "', height = '" . (float) $data["height"] . "' ";
 		}
 
 		switch ($version) {
 			case "1.5.1":
 			case "1.5.2":
 			case "1.5.3":
-				if(isset($data["quantity"])) {
-					$db->query("UPDATE `" . DB_PREFIX . "product` SET model = '" . $db->escape($data["model"]) . "', sku = '" . $db->escape($data["sku"]) . "', quantity = '" . (int)$data["quantity"] . "', subtract = '" . (int)$data["subtract"] . "', stock_status_id = '" . (int)$data["stock_status_id"] . "', date_available = NOW(), price = '" . (float)$data["price"] . "', weight = '" . (float)$data["weight"] . "', status = '" . (int)$data["status"] . "', date_added = NOW() " . $dimensions . " WHERE product_id = '" . $db->escape($data["id"]) . "';");
+				if (isset($data["quantity"])) {
+					$db->query("UPDATE `" . DB_PREFIX . "product` SET model = '" . $db->escape($data["model"]) . "', sku = '" . $db->escape($data["sku"]) . "', quantity = '" . (int) $data["quantity"] . "', subtract = '" . (int) $data["subtract"] . "', stock_status_id = '" . (int) $data["stock_status_id"] . "', date_available = NOW(), price = '" . (float) $data["price"] . "', weight = '" . (float) $data["weight"] . "', status = '" . (int) $data["status"] . "', date_added = NOW() " . $dimensions . " WHERE product_id = '" . $db->escape($data["id"]) . "';");
 				} else {
-					$db->query("UPDATE `" . DB_PREFIX . "product` SET model = '" . $db->escape($data["model"]) . "', sku = '" . $db->escape($data["sku"]) . "', subtract = '" . (int)$data["subtract"] . "', stock_status_id = '" . (int)$data["stock_status_id"] . "', date_available = NOW(), price = '" . (float)$data["price"] . "', weight = '" . (float)$data["weight"] . "', status = '" . (int)$data["status"] . "', date_added = NOW() " . $dimensions . " WHERE product_id = '" . $db->escape($data["id"]) . "';");
+					$db->query("UPDATE `" . DB_PREFIX . "product` SET model = '" . $db->escape($data["model"]) . "', sku = '" . $db->escape($data["sku"]) . "', subtract = '" . (int) $data["subtract"] . "', stock_status_id = '" . (int) $data["stock_status_id"] . "', date_available = NOW(), price = '" . (float) $data["price"] . "', weight = '" . (float) $data["weight"] . "', status = '" . (int) $data["status"] . "', date_added = NOW() " . $dimensions . " WHERE product_id = '" . $db->escape($data["id"]) . "';");
 				}
 				break;
 			default:
-				if(isset($data["quantity"])) {
-					$db->query("UPDATE `" . DB_PREFIX . "product` SET model = '" . $db->escape($data["model"]) . "', sku = '" . $db->escape($data["sku"]) . "', ean = '" . $db->escape($data["ean"]) . "', quantity = '" . (int)$data["quantity"] . "', subtract = '" . (int)$data["subtract"] . "', stock_status_id = '" . (int)$data["stock_status_id"] . "', date_available = NOW(), price = '" . (float)$data["price"] . "', weight = '" . (float)$data["weight"] . "', status = '" . (int)$data["status"] . "', date_added = NOW() " . $dimensions . " WHERE product_id = '" . $db->escape($data["id"]) . "';");
+				if (isset($data["quantity"])) {
+					$db->query("UPDATE `" . DB_PREFIX . "product` SET model = '" . $db->escape($data["model"]) . "', sku = '" . $db->escape($data["sku"]) . "', ean = '" . $db->escape($data["ean"]) . "', quantity = '" . (int) $data["quantity"] . "', subtract = '" . (int) $data["subtract"] . "', stock_status_id = '" . (int) $data["stock_status_id"] . "', date_available = NOW(), price = '" . (float) $data["price"] . "', weight = '" . (float) $data["weight"] . "', status = '" . (int) $data["status"] . "', date_added = NOW() " . $dimensions . " WHERE product_id = '" . $db->escape($data["id"]) . "';");
 				} else {
-					$db->query("UPDATE `" . DB_PREFIX . "product` SET model = '" . $db->escape($data["model"]) . "', sku = '" . $db->escape($data["sku"]) . "', ean = '" . $db->escape($data["ean"]) . "', subtract = '" . (int)$data["subtract"] . "', stock_status_id = '" . (int)$data["stock_status_id"] . "', date_available = NOW(), price = '" . (float)$data["price"] . "', weight = '" . (float)$data["weight"] . "', status = '" . (int)$data["status"] . "', date_added = NOW() " . $dimensions . " WHERE product_id = '" . $db->escape($data["id"]) . "';");
+					$db->query("UPDATE `" . DB_PREFIX . "product` SET model = '" . $db->escape($data["model"]) . "', sku = '" . $db->escape($data["sku"]) . "', ean = '" . $db->escape($data["ean"]) . "', subtract = '" . (int) $data["subtract"] . "', stock_status_id = '" . (int) $data["stock_status_id"] . "', date_available = NOW(), price = '" . (float) $data["price"] . "', weight = '" . (float) $data["weight"] . "', status = '" . (int) $data["status"] . "', date_added = NOW() " . $dimensions . " WHERE product_id = '" . $db->escape($data["id"]) . "';");
 				}
 				break;
 		}
@@ -471,53 +500,53 @@ function sql_insertUpdateProduct($data, $version) {
 			case "1.5.1":
 			case "1.5.2":
 			case "1.5.3":
-				if(isset($data["quantity"])) {
-					$db->query("INSERT INTO `" . DB_PREFIX . "product` SET product_id = '" . $db->escape($data["id"]) . "', model = '" . $db->escape($data["model"]) . "', sku = '" . $db->escape($data["sku"]) . "', upc = '" . $db->escape($data["upc"]) . "', location = '" . $db->escape($data["location"]) . "', quantity = '" . (int)$data["quantity"] . "', minimum = '" . (int)$data["minimum"] . "', subtract = '" . (int)$data["subtract"] . "', stock_status_id = '" . (int)$data["stock_status_id"] . "', date_available = NOW(), manufacturer_id = '" . (int)$data["manufacturer_id"] . "', price = '" . (float)$data["price"] . "', points = '" . (int)$data["points"] . "', weight = '" . (float)$data["weight"] . "', weight_class_id = '" . (int)$data["weight_class_id"] . "', length = '" . (float)$data["length"] . "', width = '" . (float)$data["width"] . "', height = '" . (float)$data["height"] . "', length_class_id = '" . (int)$data["length_class_id"] . "', status = '" . (int)$data["status"] . "', tax_class_id = '" . $db->escape($data["tax_class_id"]) . "', sort_order = '" . (int)$data["sort_order"] . "', date_added = NOW()");
+				if (isset($data["quantity"])) {
+					$db->query("INSERT INTO `" . DB_PREFIX . "product` SET product_id = '" . $db->escape($data["id"]) . "', model = '" . $db->escape($data["model"]) . "', sku = '" . $db->escape($data["sku"]) . "', upc = '" . $db->escape($data["upc"]) . "', location = '" . $db->escape($data["location"]) . "', quantity = '" . (int) $data["quantity"] . "', minimum = '" . (int) $data["minimum"] . "', subtract = '" . (int) $data["subtract"] . "', stock_status_id = '" . (int) $data["stock_status_id"] . "', date_available = NOW(), manufacturer_id = '" . (int) $data["manufacturer_id"] . "', price = '" . (float) $data["price"] . "', points = '" . (int) $data["points"] . "', weight = '" . (float) $data["weight"] . "', weight_class_id = '" . (int) $data["weight_class_id"] . "', length = '" . (float) $data["length"] . "', width = '" . (float) $data["width"] . "', height = '" . (float) $data["height"] . "', length_class_id = '" . (int) $data["length_class_id"] . "', status = '" . (int) $data["status"] . "', tax_class_id = '" . $db->escape($data["tax_class_id"]) . "', sort_order = '" . (int) $data["sort_order"] . "', date_added = NOW()");
 				} else {
-					$db->query("INSERT INTO `" . DB_PREFIX . "product` SET product_id = '" . $db->escape($data["id"]) . "', model = '" . $db->escape($data["model"]) . "', sku = '" . $db->escape($data["sku"]) . "', upc = '" . $db->escape($data["upc"]) . "', location = '" . $db->escape($data["location"]) . "', minimum = '" . (int)$data["minimum"] . "', subtract = '" . (int)$data["subtract"] . "', stock_status_id = '" . (int)$data["stock_status_id"] . "', date_available = NOW(), manufacturer_id = '" . (int)$data["manufacturer_id"] . "', price = '" . (float)$data["price"] . "', points = '" . (int)$data["points"] . "', weight = '" . (float)$data["weight"] . "', weight_class_id = '" . (int)$data["weight_class_id"] . "', length = '" . (float)$data["length"] . "', width = '" . (float)$data["width"] . "', height = '" . (float)$data["height"] . "', length_class_id = '" . (int)$data["length_class_id"] . "', status = '" . (int)$data["status"] . "', tax_class_id = '" . $db->escape($data["tax_class_id"]) . "', sort_order = '" . (int)$data["sort_order"] . "', date_added = NOW()");
+					$db->query("INSERT INTO `" . DB_PREFIX . "product` SET product_id = '" . $db->escape($data["id"]) . "', model = '" . $db->escape($data["model"]) . "', sku = '" . $db->escape($data["sku"]) . "', upc = '" . $db->escape($data["upc"]) . "', location = '" . $db->escape($data["location"]) . "', minimum = '" . (int) $data["minimum"] . "', subtract = '" . (int) $data["subtract"] . "', stock_status_id = '" . (int) $data["stock_status_id"] . "', date_available = NOW(), manufacturer_id = '" . (int) $data["manufacturer_id"] . "', price = '" . (float) $data["price"] . "', points = '" . (int) $data["points"] . "', weight = '" . (float) $data["weight"] . "', weight_class_id = '" . (int) $data["weight_class_id"] . "', length = '" . (float) $data["length"] . "', width = '" . (float) $data["width"] . "', height = '" . (float) $data["height"] . "', length_class_id = '" . (int) $data["length_class_id"] . "', status = '" . (int) $data["status"] . "', tax_class_id = '" . $db->escape($data["tax_class_id"]) . "', sort_order = '" . (int) $data["sort_order"] . "', date_added = NOW()");
 				}
 				break;
 			default:
-				if(isset($data["quantity"])) {
-					$db->query("INSERT INTO `" . DB_PREFIX . "product` SET product_id = '" . $db->escape($data["id"]) . "', model = '" . $db->escape($data["model"]) . "', sku = '" . $db->escape($data["sku"]) . "', upc = '" . $db->escape($data["upc"]) . "', ean = '" . $db->escape($data["ean"]) . "', jan = '" . $db->escape($data["jan"]) . "', isbn = '" . $db->escape($data["isbn"]) . "', mpn = '" . $db->escape($data["mpn"]) . "', location = '" . $db->escape($data["location"]) . "', quantity = '" . (int)$data["quantity"] . "', minimum = '" . (int)$data["minimum"] . "', subtract = '" . (int)$data["subtract"] . "', stock_status_id = '" . (int)$data["stock_status_id"] . "', date_available = NOW(), manufacturer_id = '" . (int)$data["manufacturer_id"] . "', price = '" . (float)$data["price"] . "', points = '" . (int)$data["points"] . "', weight = '" . (float)$data["weight"] . "', weight_class_id = '" . (int)$data["weight_class_id"] . "', length = '" . (float)$data["length"] . "', width = '" . (float)$data["width"] . "', height = '" . (float)$data["height"] . "', length_class_id = '" . (int)$data["length_class_id"] . "', status = '" . (int)$data["status"] . "', tax_class_id = '" . $db->escape($data["tax_class_id"]) . "', sort_order = '" . (int)$data["sort_order"] . "', date_added = NOW()");
+				if (isset($data["quantity"])) {
+					$db->query("INSERT INTO `" . DB_PREFIX . "product` SET product_id = '" . $db->escape($data["id"]) . "', model = '" . $db->escape($data["model"]) . "', sku = '" . $db->escape($data["sku"]) . "', upc = '" . $db->escape($data["upc"]) . "', ean = '" . $db->escape($data["ean"]) . "', jan = '" . $db->escape($data["jan"]) . "', isbn = '" . $db->escape($data["isbn"]) . "', mpn = '" . $db->escape($data["mpn"]) . "', location = '" . $db->escape($data["location"]) . "', quantity = '" . (int) $data["quantity"] . "', minimum = '" . (int) $data["minimum"] . "', subtract = '" . (int) $data["subtract"] . "', stock_status_id = '" . (int) $data["stock_status_id"] . "', date_available = NOW(), manufacturer_id = '" . (int) $data["manufacturer_id"] . "', price = '" . (float) $data["price"] . "', points = '" . (int) $data["points"] . "', weight = '" . (float) $data["weight"] . "', weight_class_id = '" . (int) $data["weight_class_id"] . "', length = '" . (float) $data["length"] . "', width = '" . (float) $data["width"] . "', height = '" . (float) $data["height"] . "', length_class_id = '" . (int) $data["length_class_id"] . "', status = '" . (int) $data["status"] . "', tax_class_id = '" . $db->escape($data["tax_class_id"]) . "', sort_order = '" . (int) $data["sort_order"] . "', date_added = NOW()");
 				} else {
-					$db->query("INSERT INTO `" . DB_PREFIX . "product` SET product_id = '" . $db->escape($data["id"]) . "', model = '" . $db->escape($data["model"]) . "', sku = '" . $db->escape($data["sku"]) . "', upc = '" . $db->escape($data["upc"]) . "', ean = '" . $db->escape($data["ean"]) . "', jan = '" . $db->escape($data["jan"]) . "', isbn = '" . $db->escape($data["isbn"]) . "', mpn = '" . $db->escape($data["mpn"]) . "', location = '" . $db->escape($data["location"]) . "', minimum = '" . (int)$data["minimum"] . "', subtract = '" . (int)$data["subtract"] . "', stock_status_id = '" . (int)$data["stock_status_id"] . "', date_available = NOW(), manufacturer_id = '" . (int)$data["manufacturer_id"] . "', price = '" . (float)$data["price"] . "', points = '" . (int)$data["points"] . "', weight = '" . (float)$data["weight"] . "', weight_class_id = '" . (int)$data["weight_class_id"] . "', length = '" . (float)$data["length"] . "', width = '" . (float)$data["width"] . "', height = '" . (float)$data["height"] . "', length_class_id = '" . (int)$data["length_class_id"] . "', status = '" . (int)$data["status"] . "', tax_class_id = '" . $db->escape($data["tax_class_id"]) . "', sort_order = '" . (int)$data["sort_order"] . "', date_added = NOW()");
+					$db->query("INSERT INTO `" . DB_PREFIX . "product` SET product_id = '" . $db->escape($data["id"]) . "', model = '" . $db->escape($data["model"]) . "', sku = '" . $db->escape($data["sku"]) . "', upc = '" . $db->escape($data["upc"]) . "', ean = '" . $db->escape($data["ean"]) . "', jan = '" . $db->escape($data["jan"]) . "', isbn = '" . $db->escape($data["isbn"]) . "', mpn = '" . $db->escape($data["mpn"]) . "', location = '" . $db->escape($data["location"]) . "', minimum = '" . (int) $data["minimum"] . "', subtract = '" . (int) $data["subtract"] . "', stock_status_id = '" . (int) $data["stock_status_id"] . "', date_available = NOW(), manufacturer_id = '" . (int) $data["manufacturer_id"] . "', price = '" . (float) $data["price"] . "', points = '" . (int) $data["points"] . "', weight = '" . (float) $data["weight"] . "', weight_class_id = '" . (int) $data["weight_class_id"] . "', length = '" . (float) $data["length"] . "', width = '" . (float) $data["width"] . "', height = '" . (float) $data["height"] . "', length_class_id = '" . (int) $data["length_class_id"] . "', status = '" . (int) $data["status"] . "', tax_class_id = '" . $db->escape($data["tax_class_id"]) . "', sort_order = '" . (int) $data["sort_order"] . "', date_added = NOW()");
 				}
 				break;
 		}
 		$productId = $db->getLastId();
 	}
-	
+
 	if (isset($data["image"])) {
-		$db->query("UPDATE `" . DB_PREFIX . "product` SET image = '" . $db->escape(html_entity_decode($data["image"], ENT_QUOTES, "UTF-8")) . "' WHERE product_id = '" . (int)$productId . "'");
+		$db->query("UPDATE `" . DB_PREFIX . "product` SET image = '" . $db->escape(html_entity_decode($data["image"], ENT_QUOTES, "UTF-8")) . "' WHERE product_id = '" . (int) $productId . "'");
 	}
-		
+
 	foreach ($data["product_description"] as $languageId => $value) {
-		$query = $db->query("SELECT name FROM `" . DB_PREFIX . "product_description` WHERE product_id = '" . (int)$productId . "' AND language_id = '" . (int)$languageId . "'");
+		$query = $db->query("SELECT name FROM `" . DB_PREFIX . "product_description` WHERE product_id = '" . (int) $productId . "' AND language_id = '" . (int) $languageId . "'");
 		if ($query->num_rows) {
 			$currentOCDescription = $query->rows[0]["name"];
 			if ($currentOCDescription != $value["name"]) {
-				$db->query("UPDATE `" . DB_PREFIX . "product_description` SET name = '" . $db->escape($value["name"]) . "', meta_description = '" . $db->escape($value["description"]) . "', description = '" . $db->escape($value["description"]) . "' WHERE product_id = '" . (int)$productId . "' AND language_id = '" . (int)$languageId . "'");
+				$db->query("UPDATE `" . DB_PREFIX . "product_description` SET name = '" . $db->escape($value["name"]) . "', meta_description = '" . $db->escape($value["description"]) . "', description = '" . $db->escape($value["description"]) . "' WHERE product_id = '" . (int) $productId . "' AND language_id = '" . (int) $languageId . "'");
 			}
 		} else {
-			$db->query("INSERT INTO `" . DB_PREFIX . "product_description` SET product_id = '" . (int)$productId . "', language_id = '" . (int)$languageId . "', name = '" . $db->escape($value["name"]) . "', meta_keyword = '" . $db->escape($value["meta_keyword"]) . "', meta_description = '" . $db->escape($value["description"]) . "', description = '" . $db->escape($value["description"]) . "'");
+			$db->query("INSERT INTO `" . DB_PREFIX . "product_description` SET product_id = '" . (int) $productId . "', language_id = '" . (int) $languageId . "', name = '" . $db->escape($value["name"]) . "', meta_keyword = '" . $db->escape($value["meta_keyword"]) . "', meta_description = '" . $db->escape($value["description"]) . "', description = '" . $db->escape($value["description"]) . "'");
 		}
 	}
-		
+
 	if (isset($data["product_image"])) {
 		foreach ($data["product_image"] as $product_image) {
-			$db->query("INSERT INTO `" . DB_PREFIX . "product_image` SET product_id = '" . (int)$productId . "', image = '" . $db->escape(html_entity_decode($product_image["image"], ENT_QUOTES, "UTF-8")) . "', sort_order = '" . (int)$product_image["sort_order"] . "'");
+			$db->query("INSERT INTO `" . DB_PREFIX . "product_image` SET product_id = '" . (int) $productId . "', image = '" . $db->escape(html_entity_decode($product_image["image"], ENT_QUOTES, "UTF-8")) . "', sort_order = '" . (int) $product_image["sort_order"] . "'");
 		}
 	}
-	
-	$db->query("INSERT INTO `" . DB_PREFIX . "product_to_store` SET product_id = '" . (int)$productId . "', store_id = '0'");
+
+	$db->query("INSERT INTO `" . DB_PREFIX . "product_to_store` SET product_id = '" . (int) $productId . "', store_id = '0'");
 }
 
 function sql_setProductStockQuantity($data) {
 	$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
 	$query = $db->query("SELECT product_id FROM `" . DB_PREFIX . "product` WHERE product_id = '" . $data["id"] . "'");
 	if ($query->num_rows) {
-		$db->query("UPDATE `" . DB_PREFIX . "product` SET quantity = '" . (int)$data["quantity"] . "' WHERE product_id = '" . $db->escape($data["id"]) . "';");
+		$db->query("UPDATE `" . DB_PREFIX . "product` SET quantity = '" . (int) $data["quantity"] . "' WHERE product_id = '" . $db->escape($data["id"]) . "';");
 	}
 }
 
@@ -525,7 +554,7 @@ function sql_setProductPrice($data) {
 	$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
 	$query = $db->query("SELECT product_id FROM `" . DB_PREFIX . "product` WHERE product_id = '" . $data["id"] . "'");
 	if ($query->num_rows) {
-		$db->query("UPDATE `" . DB_PREFIX . "product` SET price = '" . (float)$data["price"] . "' WHERE product_id = '" . $db->escape($data["id"]) . "';");
+		$db->query("UPDATE `" . DB_PREFIX . "product` SET price = '" . (float) $data["price"] . "' WHERE product_id = '" . $db->escape($data["id"]) . "';");
 	}
 }
 
@@ -556,7 +585,7 @@ function sql_getCustomFields() {
 	$customFields = null;
 	if ($query->num_rows) {
 		foreach ($query->rows as $resultCustom) {
-			$customFields[] = array("id" => $resultCustom["custom_field_id"], "name" => $resultCustom["name"]);
+			$customFields[] = ["id" => $resultCustom["custom_field_id"], "name" => $resultCustom["name"]];
 		}
 	}
 
@@ -566,81 +595,83 @@ function sql_getCustomFields() {
 // === Methods ============================================================================
 function getTestConfiguration($user, $password, $version) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
+		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
 	} else {
-		return json_encode(array("result" => "Ok"));
+		return json_encode(["result" => "Ok"]);
 	}
 }
 
 function getListStatus($user, $password, $version) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
+		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
 	} else {
-		$listStatus = array();
+		$listStatus = [];
 		$db_status = sql_getOrderStatus();
 		foreach ($db_status as $result) {
 			$listStatus[] = $result["status"];
 		}
-		return json_encode(array("result" => "Ok", "data" => $listStatus));
+		return json_encode(["result" => "Ok", "data" => $listStatus]);
 	}
 }
 
 function getListOrders($user, $password, $version, $status, $initialDate, $finalDate, $criteriaDate = "added") {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
+		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
 	} else {
-		$listOrders = array();
+		$listOrders = [];
 		$db_orders = sql_getOrders($status, $initialDate, $finalDate, $criteriaDate);
 		foreach ($db_orders as $result) {
 			$objOrder = new Order($result["order_id"], $result["date_added"], $result["payment_method"], ($result["total"] * $result["currency_value"]), $result["status"], "", 0, 0);
 			$objOrder->client = new Client($result["firstname"], $result["lastname"], $result["email"], $result["telephone"], $result["fax"]);
 			$listOrders[] = $objOrder;
 		}
-		return json_encode(array("result" => "Ok", "data" => $listOrders));
+		return json_encode(["result" => "Ok", "data" => $listOrders]);
 	}
 }
 
 function getOrder($user, $password, $version, $orderId, $aditionalFields, $productCodeField, $productAditionalFields) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
+		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
 	} else {
 		$db_order = sql_getOrder($orderId);
 		foreach ($db_order as $result) {
 			$freightValue = (sql_getOrderFreight($orderId) * $result["currency_value"]);
 			$discount = 0;
-			
-			$db_total = sql_getOrderTotal($orderId);
-            foreach ($db_total as $resultTotal) {
-                if ($resultTotal["value"] < 0) {
-                	if ($resultTotal["shipping"] == 1) {
-                		$discount += (abs($resultTotal["value"]) - $freightValue);
-						$freightValue = 0;
-                	} else {
-                		$discount += abs($resultTotal["value"]);
-                	}
-                }
-            }
 
-            $transaction_id = 0;
-            try {
-	            if ($result["payment_code"] === "pagar_me_boleto" || $result["payment_code"] === "pagar_me_cartao") {
-	            	$transaction_id = sql_getTransactionIdPagarme($orderId);
-	            } else if ($result["payment_code"] === "pagar_me_checkout") {
-	            	$transaction_id = sql_getTransactionIdPagarmeCheckout($orderId);
-	            }
-	        } catch(Exception $e) {}
+			$db_total = sql_getOrderTotal($orderId);
+			foreach ($db_total as $resultTotal) {
+				if ($resultTotal["value"] < 0) {
+					if ($resultTotal["shipping"] == 1) {
+						$discount += (abs($resultTotal["value"]) - $freightValue);
+						$freightValue = 0;
+					} else {
+						$discount += abs($resultTotal["value"]);
+					}
+				}
+			}
+
+			$transaction_id = 0;
+
+			try {
+				if ($result["payment_code"] === "pagar_me_boleto" || $result["payment_code"] === "pagar_me_cartao") {
+					$transaction_id = sql_getTransactionIdPagarme($orderId);
+				} elseif ($result["payment_code"] === "pagar_me_checkout") {
+					$transaction_id = sql_getTransactionIdPagarmeCheckout($orderId);
+				}
+			} catch (Exception $e) {
+			}
 
 			$order = new Order($result["order_id"], $result["date_added"], $result["payment_method"], ($result["total"] * $result["currency_value"]), $result["status"], $result["comment"], $freightValue, $discount, $result["payment_code"], $transaction_id, $result["shipping_method"], $result["shipping_code"]);
 			$client = new Client($result["firstname"], $result["lastname"], $result["email"], $result["telephone"], $result["fax"]);
-			
+
 			//$aditionalFields = urldecode($aditionalFields);
 			//$productAditionalFields = urldecode($productAditionalFields);
-			
+
 			if ($result["customer_id"] > 0) {
 				$db_customer = sql_getCustomer($result["customer_id"]);
 				$resultCustomer = $db_customer[0];
 				$address = new Address($resultCustomer["address_1"], $resultCustomer["address_2"], $resultCustomer["city"], $resultCustomer["postcode"], $resultCustomer["country"], $resultCustomer["zone"]);
-				
+
 				$aditionalFields = explode(",", $aditionalFields);
 				if (isset($resultCustomer)) {
 					foreach ($resultCustomer as $keyField => $valueField) {
@@ -649,7 +680,7 @@ function getOrder($user, $password, $version, $orderId, $aditionalFields, $produ
 						}
 					}
 				}
-				
+
 				if (isset($result)) {
 					foreach ($result as $keyField => $valueField) {
 						if (in_array($keyField, $aditionalFields)) {
@@ -657,7 +688,7 @@ function getOrder($user, $password, $version, $orderId, $aditionalFields, $produ
 						}
 					}
 				}
-				
+
 				if ($version == "2.0.0") {
 					$aFields = sql_getCustomFields();
 					$customFields = json_decode($result["custom_field"], true);
@@ -681,7 +712,7 @@ function getOrder($user, $password, $version, $orderId, $aditionalFields, $produ
 							}
 						}
 					}
-						
+
 					$paymentCustomFields = json_decode($result["payment_custom_field"], true);
 					if ($paymentCustomFields) {
 						foreach ($aFields as $aField) {
@@ -703,7 +734,7 @@ function getOrder($user, $password, $version, $orderId, $aditionalFields, $produ
 							}
 						}
 					}
-					
+
 					$shippingCustomFields = json_decode($result["shipping_custom_field"], true);
 					if ($shippingCustomFields) {
 						foreach ($aFields as $aField) {
@@ -729,15 +760,15 @@ function getOrder($user, $password, $version, $orderId, $aditionalFields, $produ
 			} else {
 				$address = new Address($result["shipping_address_1"], $result["shipping_address_2"], $result["shipping_city"], $result["shipping_postcode"], $result["shipping_country"], $result["shipping_zone"]);
 			}
-			
+
 			$shipping_address = new Address($result["shipping_address_1"], $result["shipping_address_2"], $result["shipping_city"], $result["shipping_postcode"], $result["shipping_country"], $result["shipping_zone"]);
 			$payment_address = new Address($result["payment_address_1"], $result["payment_address_2"], $result["payment_city"], $result["payment_postcode"], $result["payment_country"], $result["payment_zone"]);
-			
+
 			$client->setAddress($address);
 			$order->setClient($client);
 			$order->setShippingAddress($shipping_address);
 			$order->setPaymentAddress($payment_address);
-			
+
 			$db_items = sql_getOrderItems($orderId);
 			foreach ($db_items as $resultItem) {
 				if ($productCodeField == "S") {
@@ -765,14 +796,14 @@ function getOrder($user, $password, $version, $orderId, $aditionalFields, $produ
 				}
 			}
 		}
-		return json_encode(array("result" => "Ok", "data" => $order));
+		return json_encode(["result" => "Ok", "data" => $order]);
 	}
 }
 
 function getProductCategoriesTree($productId) {
 	$db_productCategories = sql_getProductCategories($productId);
 
-	$listCategoriesTree = array();
+	$listCategoriesTree = [];
 	foreach ($db_productCategories as $result) {
 		if ($result["parent_id"] > 0) {
 			$tree = $result["name"];
@@ -823,9 +854,9 @@ function getProducts($user, $password, $version, $productCodeField, $aditionalFi
 		$productCodeField = "M";
 	}
 	if (! testUser($user, $password, $version)) {
-		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
+		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
 	} else {
-		$listProducts = array();
+		$listProducts = [];
 		$db_products = sql_getProducts();
 		$initialRecordNumber = ($page - 1) * $limit;
 		$finalRecordNumber = ($page * $limit) - 1;
@@ -850,7 +881,7 @@ function getProducts($user, $password, $version, $productCodeField, $aditionalFi
 			}
 			$recordNumber ++;
 		}
-		return json_encode(array("result" => "Ok", "data" => $listProducts));
+		return json_encode(["result" => "Ok", "data" => $listProducts]);
 	}
 }
 
@@ -860,7 +891,7 @@ function getProduct($user, $password, $version, $productId, $productCodeField, $
 	}
 
 	if (!testUser($user, $password, $version)) {
-		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
+		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
 	}
 
 	$db_product = sql_getProduct($productCodeField, $productId);
@@ -882,49 +913,49 @@ function getProduct($user, $password, $version, $productId, $productCodeField, $
 			}
 		}
 
-		return json_encode(array("result" => "Ok", "data" => $product));
+		return json_encode(["result" => "Ok", "data" => $product]);
 	}
 
-	return json_encode(array("result" => "Error", "errorDetails" => "Produto não encontrado."));
+	return json_encode(["result" => "Error", "errorDetails" => "Produto não encontrado."]);
 }
 
-$arProductOptions = array();
+$arProductOptions = [];
 $productPrice = 0;
 $productWeight = 0;
 
 function getProductsAndOptions($user, $password, $version, $productCodeField, $aditionalFields, $page, $limit) {
 	global $arProductOptions, $productPrice, $productWeight;
-	
+
 	if (! (isset($productCodeField))) {
 		$productCodeField = "M";
 	}
-	
+
 	if (! testUser($user, $password, $version)) {
-		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
+		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
 	} else {
-		$listProducts = array();
+		$listProducts = [];
 		$db_products = sql_getProducts();
 		$initialRecordNumber = ($page - 1) * $limit;
 		$finalRecordNumber = ($page * $limit) - 1;
 		$recordNumber = 0;
-		
+
 		$aditionalFields = urldecode($aditionalFields);
-		
+
 		foreach ($db_products as $result) {
 			$categoriesTree = getProductCategoriesTree($result["product_id"]);
 			$specialPrice = getProductSpecialPrice($result["product_id"]);
 			$db_option = sql_getProductOptions($result["product_id"]);
 			if (count($db_option) > 0) {
-				$arOptions = array();
+				$arOptions = [];
 				foreach ($db_option as $resultOption) {
 					$keyTmp = str_pad($resultOption["sort_order"], 10, "0", STR_PAD_LEFT) . str_pad($resultOption["option_id"], 10, "0", STR_PAD_LEFT);
 					if (! (isset($arOptions[$keyTmp]))) {
-						$arOptions[$keyTmp] = array();
+						$arOptions[$keyTmp] = [];
 					}
-					$arOptions[$keyTmp][] = array("option_id" => $keyTmp, "option" => $resultOption["name"], "quantity" => $resultOption["quantity"], "price" => $resultOption["price"], "weight" => $resultOption["weight"]);
+					$arOptions[$keyTmp][] = ["option_id" => $keyTmp, "option" => $resultOption["name"], "quantity" => $resultOption["quantity"], "price" => $resultOption["price"], "weight" => $resultOption["weight"]];
 				}
 
-				$arProductOptions = array();
+				$arProductOptions = [];
 				$productPrice = $result["price"];
 				$productWeight = $result["weight"];
 				getOptions(0, "", $arOptions);
@@ -962,43 +993,63 @@ function getProductsAndOptions($user, $password, $version, $productCodeField, $a
 				$recordNumber ++;
 			}
 		}
-		return json_encode(array("result" => "Ok", "data" => $listProducts));
+		return json_encode(["result" => "Ok", "data" => $listProducts]);
 	}
 }
 
 function updateShippingCode($user, $password, $version, $shippingData, $orderNumberField) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
+		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
 	} else {
-		if(isset($orderNumberField)) {
+		if (isset($orderNumberField)) {
 			$shippingData = json_decode($shippingData);
 			$shippingData->orderId = $orderNumberField;
-			
+
 			sql_updateShippingCode($shippingData);
 
-			return json_encode(array("result" => "Ok"));
+			return json_encode(["result" => "Ok"]);
 		} else {
-			return json_encode(array("result" => "Error", "errorDetails" => "Número do pedido não passado como parametro."));
+			return json_encode(["result" => "Error", "errorDetails" => "Número do pedido não passado como parametro."]);
+		}
+	}
+}
+
+function updateInvoiceData($user, $password, $version, $invoiceData, $orderNumberField) {
+	if (! testUser($user, $password, $version)) {
+		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
+	} else {
+		if (isset($orderNumberField)) {
+			$invoiceData = json_decode($invoiceData);
+			$resultOrderStatus = sql_getOrderStatusIdByStatusName($invoiceData->order_status);
+			$orderStatusId = $resultOrderStatus[0]["statusId"];
+			if (empty($orderStatusId)) {
+				return json_encode(["result" => "Error", "errorDetails" => "Situação do pedido {$invoiceData["order_status"]} não encontrada."]);
+			}
+			sql_updateInvoiceData($orderNumberField, $orderStatusId, $invoiceData->invoiceUrl);
+
+			return json_encode(["result" => "Ok"]);
+		} else {
+			return json_encode(["result" => "Error", "errorDetails" => "Número do pedido não passado como parametro."]);
 		}
 	}
 }
 
 function updateOrderStatus($user, $password, $version, $orderData) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
+		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
 	} else {
-		if(isset($orderData)) {
+		if (isset($orderData)) {
 			$orderData = json_decode($orderData);
 
-			if(isset($orderData->order_id)) {
+			if (isset($orderData->order_id)) {
 				sql_updateOrderStatus($orderData);
 
-				return json_encode(array("result" => "Ok"));
+				return json_encode(["result" => "Ok"]);
 			} else {
-				return json_encode(array("result" => "Error", "errorDetails" => "Número do pedido não passado como parametro."));
+				return json_encode(["result" => "Error", "errorDetails" => "Número do pedido não passado como parametro."]);
 			}
 		} else {
-			return json_encode(array("result" => "Error", "errorDetails" => "Dados do pedido não passados como parametro."));
+			return json_encode(["result" => "Error", "errorDetails" => "Dados do pedido não passados como parametro."]);
 		}
 	}
 }
@@ -1032,10 +1083,10 @@ function insertUpdateProductCategory($productId, $categories) {
 			$parentId = 0;
 			foreach ($aCategories as $name) {
 				if (!empty($name)) {
-					$data = array();
+					$data = [];
 					$data["parent_id"] = $parentId;
-					$data["category_description"] = array();
-					$data["category_description"][$languageId] = array("name" => $name);
+					$data["category_description"] = [];
+					$data["category_description"][$languageId] = ["name" => $name];
 
 					$result = sql_getCategoryByName($name, $parentId);
 					if (count($result) > 0) {
@@ -1054,17 +1105,16 @@ function insertUpdateProductCategory($productId, $categories) {
 
 function insertUpdateProduct($user, $password, $version, $productData, $productCodeField) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
+		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
 	} else {
-		
 		if (! (isset($productCodeField))) {
 			$productCodeField = "M";
 		}
-		
+
 		$productData = json_decode($productData);
 		$productData->id = sql_getProductIdByCode($productData->id, $productData->model, $productCodeField);
 
-		$data = array();
+		$data = [];
 		$data["id"] = $productData->id;
 		$data["model"] = $productData->model;
 		$data["sku"] = $productData->model;
@@ -1091,14 +1141,14 @@ function insertUpdateProduct($user, $password, $version, $productData, $productC
 		$productData->descriptionComplementar = str_replace("#lt;", "<", $productData->descriptionComplementar);
 		$productData->descriptionComplementar = str_replace("#gt;", ">", $productData->descriptionComplementar);
 		$productData->descriptionComplementar = str_replace("#quot;", "'", $productData->descriptionComplementar);
-		
+
 		$languageId = sql_getLanguageId();
-		$data["product_description"] = array();
-		$data["product_description"][$languageId] = array("name" => $productData->description, "description" => $productData->descriptionComplementar);
-		
+		$data["product_description"] = [];
+		$data["product_description"][$languageId] = ["name" => $productData->description, "description" => $productData->descriptionComplementar];
+
 		$data["image"] = null;
-		$data["product_image"] = array();
-		
+		$data["product_image"] = [];
+
 		if (!empty($productData->images)) {
 			foreach ($productData->images as $value) {
 				$path = file_get_contents(urldecode($value->url));
@@ -1118,9 +1168,9 @@ function insertUpdateProduct($user, $password, $version, $productData, $productC
 					}
 				} else {
 					if ($version == "2.0.0") {
-						$data["product_image"][] = array("image" => "catalog/" . $value->name);
+						$data["product_image"][] = ["image" => "catalog/" . $value->name];
 					} else {
-						$data["product_image"][] = array("image" => "data/" . $value->name);
+						$data["product_image"][] = ["image" => "data/" . $value->name];
 					}
 				}
 			}
@@ -1136,35 +1186,34 @@ function insertUpdateProduct($user, $password, $version, $productData, $productC
 			insertUpdateProductSpecialPrice($productData->id, $productData->special_price);
 		}
 
-		return json_encode(array("result" => "Ok"));
+		return json_encode(["result" => "Ok"]);
 	}
 }
 
 function setProductStockQuantity($user, $password, $version, $productData, $productCodeField) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
+		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
 	} else {
-		
 		if (! (isset($productCodeField))) {
 			$productCodeField = "M";
 		}
-		
+
 		$productData = json_decode($productData);
 		$productData->id = sql_getProductIdByCode($productData->id, $productData->model, $productCodeField);
 
-		$data = array();
+		$data = [];
 		$data["id"] = $productData->id;
 		$data["quantity"] = $productData->quantity;
-		
+
 		sql_setProductStockQuantity($data);
-		
-		return json_encode(array("result" => "Ok"));
+
+		return json_encode(["result" => "Ok"]);
 	}
 }
 
 function setProductPrice($user, $password, $version, $productData, $productCodeField) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
+		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
 	} else {
 		if (! (isset($productCodeField))) {
 			$productCodeField = "M";
@@ -1173,7 +1222,7 @@ function setProductPrice($user, $password, $version, $productData, $productCodeF
 		$productData = json_decode($productData);
 		$productData->id = sql_getProductIdByCode($productData->id, $productData->model, $productCodeField);
 
-		$data = array();
+		$data = [];
 		$data["id"] = $productData->id;
 		$data["price"] = $productData->price;
 
@@ -1183,7 +1232,7 @@ function setProductPrice($user, $password, $version, $productData, $productCodeF
 			insertUpdateProductSpecialPrice($productData->id, $productData->special_price);
 		}
 
-		return json_encode(array("result" => "Ok"));
+		return json_encode(["result" => "Ok"]);
 	}
 }
 
@@ -1207,7 +1256,7 @@ function getProductNameAndOptions($order_product_id) {
 
 function getOptions($option_id, $descricao, $arOptions) {
 	global $arProductOptions, $productPrice, $productWeight;
-	
+
 	foreach ($arOptions as $keyOption => $valueoption) {
 		if ($keyOption > $option_id) {
 			foreach ($arOptions[$keyOption] as $keyAux => $valueAux) {
@@ -1216,16 +1265,15 @@ function getOptions($option_id, $descricao, $arOptions) {
 				} else {
 					$descricaoAux = getOptions($keyOption, $descricao . " |-| " . $valueAux["option"], $arOptions);
 				}
-				
+
 				$test = explode("|-|", $descricaoAux);
-				
+
 				if (count($test) == count($arOptions)) {
 					$productName = str_replace("|-|", "-", $descricaoAux);
-					$arProductOptions[] = array("name" => $productName, "price" => ($productPrice + $valueAux["price"]), "quantity" => $valueAux["quantity"], "weight" => ($productWeight + $valueAux["weight"]));
+					$arProductOptions[] = ["name" => $productName, "price" => ($productPrice + $valueAux["price"]), "quantity" => $valueAux["quantity"], "weight" => ($productWeight + $valueAux["weight"])];
 				}
 			}
 		}
 	}
 	return $descricao;
 }
-?>
