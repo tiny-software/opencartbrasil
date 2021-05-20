@@ -68,7 +68,7 @@ switch ($_REQUEST["method"]) {
 		print_r(setProductPrice($_REQUEST["user"], $_REQUEST["password"], $_REQUEST["version"], $_REQUEST["productData"], $_REQUEST["productCodeField"]));
 		break;
 	default:
-		print_r(json_encode(["result" => "Error", "errorDetails" => "Método inválido ou não informado."]));
+		print_r(json_encode(array("result" => "Error", "errorDetails" => "Método inválido ou não informado.")));
 }
 
 // === Classes ============================================================================
@@ -91,7 +91,7 @@ class Order {
 	public $shipping_method;
 	public $shipping_code;
 
-	public function __construct($id, $date, $payment_method, $total, $status, $comment, $freight, $discount, $payment_code = "", $transaction_id = "", $shipping_method = "", $shipping_code = "") {
+	function __construct($id, $date, $payment_method, $total, $status, $comment, $freight, $discount, $payment_code = "", $transaction_id = "", $shipping_method = "", $shipping_code = "") {
 		$this->id = $id;
 		$this->date = $date;
 		$this->payment_method = $payment_method;
@@ -104,7 +104,7 @@ class Order {
 		$this->transaction_id = $transaction_id;
 		$this->shipping_method = $shipping_method;
 		$this->shipping_code = $shipping_code;
-		$this->items = [];
+		$this->items = array();
 	}
 
 	public function setClient(Client $client) {
@@ -132,7 +132,7 @@ class Item {
 	public $price;
 	public $total;
 
-	public function __construct(Product $product, $quantity, $price, $total) {
+	function __construct(Product $product, $quantity, $price, $total) {
 		$this->product = $product;
 		$this->quantity = $quantity;
 		$this->price = $price;
@@ -150,12 +150,12 @@ class Client {
 	public $address;
 	public $aditionalFields;
 
-	public function __construct($firstName, $lastName, $mail, $phone, $phone2) {
+	function __construct($firstName, $lastName, $mail, $phone, $phone2) {
 		$this->name = $firstName . " " . $lastName;
 		$this->mail = $mail;
 		$this->phone = $phone;
 		$this->phone2 = $phone2;
-		$aditionalFields = [];
+		$aditionalFields = array();
 	}
 
 	public function setAddress(Address $address) {
@@ -177,7 +177,7 @@ class Address {
 	public $country;
 	public $state;
 
-	public function __construct($address, $neighborhood, $city, $postcode, $country, $state) {
+	function __construct($address, $neighborhood, $city, $postcode, $country, $state) {
 		$this->address = $address;
 		$this->neighborhood = $neighborhood;
 		$this->city = $city;
@@ -201,7 +201,7 @@ class Product {
 	public $categories;
 	public $special_price;
 
-	public function __construct($name, $name_and_options, $model, $id = null, $price = null, $stock_quantity = null, $weight = null, $categories = [], $special_price = 0) {
+	function __construct($name, $name_and_options, $model, $id = null, $price = null, $stock_quantity = null, $weight = null, $categories = array(), $special_price = 0) {
 		$this->name = $name;
 		$this->name_and_options = $name_and_options;
 		$this->model = $model;
@@ -211,7 +211,7 @@ class Product {
 		$this->weight = $weight;
 		$this->categories = $categories;
 		$this->special_price = $special_price;
-		$aditionalFields = [];
+		$aditionalFields = array();
 	}
 
 	public function addAditionalField($key, $value) {
@@ -585,7 +585,7 @@ function sql_getCustomFields() {
 	$customFields = null;
 	if ($query->num_rows) {
 		foreach ($query->rows as $resultCustom) {
-			$customFields[] = ["id" => $resultCustom["custom_field_id"], "name" => $resultCustom["name"]];
+			$customFields[] = array("id" => $resultCustom["custom_field_id"], "name" => $resultCustom["name"]);
 		}
 	}
 
@@ -595,43 +595,43 @@ function sql_getCustomFields() {
 // === Methods ============================================================================
 function getTestConfiguration($user, $password, $version) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
+		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
 	} else {
-		return json_encode(["result" => "Ok"]);
+		return json_encode(array("result" => "Ok"));
 	}
 }
 
 function getListStatus($user, $password, $version) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
+		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
 	} else {
-		$listStatus = [];
+		$listStatus = array();
 		$db_status = sql_getOrderStatus();
 		foreach ($db_status as $result) {
 			$listStatus[] = $result["status"];
 		}
-		return json_encode(["result" => "Ok", "data" => $listStatus]);
+		return json_encode(array("result" => "Ok", "data" => $listStatus));
 	}
 }
 
 function getListOrders($user, $password, $version, $status, $initialDate, $finalDate, $criteriaDate = "added") {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
+		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
 	} else {
-		$listOrders = [];
+		$listOrders = array();
 		$db_orders = sql_getOrders($status, $initialDate, $finalDate, $criteriaDate);
 		foreach ($db_orders as $result) {
 			$objOrder = new Order($result["order_id"], $result["date_added"], $result["payment_method"], ($result["total"] * $result["currency_value"]), $result["status"], "", 0, 0);
 			$objOrder->client = new Client($result["firstname"], $result["lastname"], $result["email"], $result["telephone"], $result["fax"]);
 			$listOrders[] = $objOrder;
 		}
-		return json_encode(["result" => "Ok", "data" => $listOrders]);
+		return json_encode(array("result" => "Ok", "data" => $listOrders));
 	}
 }
 
 function getOrder($user, $password, $version, $orderId, $aditionalFields, $productCodeField, $productAditionalFields) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
+		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
 	} else {
 		$db_order = sql_getOrder($orderId);
 		foreach ($db_order as $result) {
@@ -796,14 +796,14 @@ function getOrder($user, $password, $version, $orderId, $aditionalFields, $produ
 				}
 			}
 		}
-		return json_encode(["result" => "Ok", "data" => $order]);
+		return json_encode(array("result" => "Ok", "data" => $order));
 	}
 }
 
 function getProductCategoriesTree($productId) {
 	$db_productCategories = sql_getProductCategories($productId);
 
-	$listCategoriesTree = [];
+	$listCategoriesTree = array();
 	foreach ($db_productCategories as $result) {
 		if ($result["parent_id"] > 0) {
 			$tree = $result["name"];
@@ -854,9 +854,9 @@ function getProducts($user, $password, $version, $productCodeField, $aditionalFi
 		$productCodeField = "M";
 	}
 	if (! testUser($user, $password, $version)) {
-		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
+		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
 	} else {
-		$listProducts = [];
+		$listProducts = array();
 		$db_products = sql_getProducts();
 		$initialRecordNumber = ($page - 1) * $limit;
 		$finalRecordNumber = ($page * $limit) - 1;
@@ -881,7 +881,7 @@ function getProducts($user, $password, $version, $productCodeField, $aditionalFi
 			}
 			$recordNumber ++;
 		}
-		return json_encode(["result" => "Ok", "data" => $listProducts]);
+		return json_encode(array("result" => "Ok", "data" => $listProducts));
 	}
 }
 
@@ -891,7 +891,7 @@ function getProduct($user, $password, $version, $productId, $productCodeField, $
 	}
 
 	if (!testUser($user, $password, $version)) {
-		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
+		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
 	}
 
 	$db_product = sql_getProduct($productCodeField, $productId);
@@ -913,13 +913,13 @@ function getProduct($user, $password, $version, $productId, $productCodeField, $
 			}
 		}
 
-		return json_encode(["result" => "Ok", "data" => $product]);
+		return json_encode(array("result" => "Ok", "data" => $product));
 	}
 
-	return json_encode(["result" => "Error", "errorDetails" => "Produto não encontrado."]);
+	return json_encode(array("result" => "Error", "errorDetails" => "Produto não encontrado."));
 }
 
-$arProductOptions = [];
+$arProductOptions = array();
 $productPrice = 0;
 $productWeight = 0;
 
@@ -933,7 +933,7 @@ function getProductsAndOptions($user, $password, $version, $productCodeField, $a
 	if (! testUser($user, $password, $version)) {
 		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
 	} else {
-		$listProducts = [];
+		$listProducts = array();
 		$db_products = sql_getProducts();
 		$initialRecordNumber = ($page - 1) * $limit;
 		$finalRecordNumber = ($page * $limit) - 1;
@@ -946,16 +946,16 @@ function getProductsAndOptions($user, $password, $version, $productCodeField, $a
 			$specialPrice = getProductSpecialPrice($result["product_id"]);
 			$db_option = sql_getProductOptions($result["product_id"]);
 			if (count($db_option) > 0) {
-				$arOptions = [];
+				$arOptions = array();
 				foreach ($db_option as $resultOption) {
 					$keyTmp = str_pad($resultOption["sort_order"], 10, "0", STR_PAD_LEFT) . str_pad($resultOption["option_id"], 10, "0", STR_PAD_LEFT);
 					if (! (isset($arOptions[$keyTmp]))) {
-						$arOptions[$keyTmp] = [];
+						$arOptions[$keyTmp] = array();
 					}
 					$arOptions[$keyTmp][] = ["option_id" => $keyTmp, "option" => $resultOption["name"], "quantity" => $resultOption["quantity"], "price" => $resultOption["price"], "weight" => $resultOption["weight"]];
 				}
 
-				$arProductOptions = [];
+				$arProductOptions = array();
 				$productPrice = $result["price"];
 				$productWeight = $result["weight"];
 				getOptions(0, "", $arOptions);
@@ -993,13 +993,13 @@ function getProductsAndOptions($user, $password, $version, $productCodeField, $a
 				$recordNumber ++;
 			}
 		}
-		return json_encode(["result" => "Ok", "data" => $listProducts]);
+		return json_encode(array("result" => "Ok", "data" => $listProducts));
 	}
 }
 
 function updateShippingCode($user, $password, $version, $shippingData, $orderNumberField) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
+		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
 	} else {
 		if (isset($orderNumberField)) {
 			$shippingData = json_decode($shippingData);
@@ -1007,36 +1007,36 @@ function updateShippingCode($user, $password, $version, $shippingData, $orderNum
 
 			sql_updateShippingCode($shippingData);
 
-			return json_encode(["result" => "Ok"]);
+			return json_encode(array("result" => "Ok"));
 		} else {
-			return json_encode(["result" => "Error", "errorDetails" => "Número do pedido não passado como parametro."]);
+			return json_encode(array("result" => "Error", "errorDetails" => "Número do pedido não passado como parametro."));
 		}
 	}
 }
 
 function updateInvoiceData($user, $password, $version, $invoiceData, $orderNumberField) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
+		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
 	}
 
 	if (!isset($orderNumberField)) {
-		return json_encode(["result" => "Error", "errorDetails" => "Número do pedido não passado como parametro."]);
+		return json_encode(array("result" => "Error", "errorDetails" => "Número do pedido não passado como parametro."));
 	}
 
 	$invoiceData = json_decode($invoiceData);
 	$resultOrderStatus = sql_getOrderStatusIdByStatusName($invoiceData->order_status);
 	$orderStatusId = $resultOrderStatus[0]["statusId"];
 	if (empty($orderStatusId)) {
-		return json_encode(["result" => "Error", "errorDetails" => "Situação do pedido {$invoiceData["order_status"]} não encontrada."]);
+		return json_encode(array("result" => "Error", "errorDetails" => "Situação do pedido {$invoiceData["order_status"]} não encontrada."));
 	}
 	sql_updateInvoiceData($orderNumberField, $orderStatusId, $invoiceData->invoiceUrl);
 
-	return json_encode(["result" => "Ok"]);
+	return json_encode(array("result" => "Ok"));
 }
 
 function updateOrderStatus($user, $password, $version, $orderData) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
+		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
 	} else {
 		if (isset($orderData)) {
 			$orderData = json_decode($orderData);
@@ -1044,12 +1044,12 @@ function updateOrderStatus($user, $password, $version, $orderData) {
 			if (isset($orderData->order_id)) {
 				sql_updateOrderStatus($orderData);
 
-				return json_encode(["result" => "Ok"]);
+				return json_encode(array("result" => "Ok"));
 			} else {
-				return json_encode(["result" => "Error", "errorDetails" => "Número do pedido não passado como parametro."]);
+				return json_encode(array("result" => "Error", "errorDetails" => "Número do pedido não passado como parametro."));
 			}
 		} else {
-			return json_encode(["result" => "Error", "errorDetails" => "Dados do pedido não passados como parametro."]);
+			return json_encode(array("result" => "Error", "errorDetails" => "Dados do pedido não passados como parametro."));
 		}
 	}
 }
@@ -1083,9 +1083,9 @@ function insertUpdateProductCategory($productId, $categories) {
 			$parentId = 0;
 			foreach ($aCategories as $name) {
 				if (!empty($name)) {
-					$data = [];
+					$data = array();
 					$data["parent_id"] = $parentId;
-					$data["category_description"] = [];
+					$data["category_description"] = array();
 					$data["category_description"][$languageId] = ["name" => $name];
 
 					$result = sql_getCategoryByName($name, $parentId);
@@ -1105,7 +1105,7 @@ function insertUpdateProductCategory($productId, $categories) {
 
 function insertUpdateProduct($user, $password, $version, $productData, $productCodeField) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
+		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
 	} else {
 		if (! (isset($productCodeField))) {
 			$productCodeField = "M";
@@ -1114,7 +1114,7 @@ function insertUpdateProduct($user, $password, $version, $productData, $productC
 		$productData = json_decode($productData);
 		$productData->id = sql_getProductIdByCode($productData->id, $productData->model, $productCodeField);
 
-		$data = [];
+		$data = array();
 		$data["id"] = $productData->id;
 		$data["model"] = $productData->model;
 		$data["sku"] = $productData->model;
@@ -1143,11 +1143,11 @@ function insertUpdateProduct($user, $password, $version, $productData, $productC
 		$productData->descriptionComplementar = str_replace("#quot;", "'", $productData->descriptionComplementar);
 
 		$languageId = sql_getLanguageId();
-		$data["product_description"] = [];
+		$data["product_description"] = array();
 		$data["product_description"][$languageId] = ["name" => $productData->description, "description" => $productData->descriptionComplementar];
 
 		$data["image"] = null;
-		$data["product_image"] = [];
+		$data["product_image"] = array();
 
 		if (!empty($productData->images)) {
 			foreach ($productData->images as $value) {
@@ -1186,13 +1186,13 @@ function insertUpdateProduct($user, $password, $version, $productData, $productC
 			insertUpdateProductSpecialPrice($productData->id, $productData->special_price);
 		}
 
-		return json_encode(["result" => "Ok"]);
+		return json_encode(array("result" => "Ok"));
 	}
 }
 
 function setProductStockQuantity($user, $password, $version, $productData, $productCodeField) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
+		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
 	} else {
 		if (! (isset($productCodeField))) {
 			$productCodeField = "M";
@@ -1201,19 +1201,19 @@ function setProductStockQuantity($user, $password, $version, $productData, $prod
 		$productData = json_decode($productData);
 		$productData->id = sql_getProductIdByCode($productData->id, $productData->model, $productCodeField);
 
-		$data = [];
+		$data = array();
 		$data["id"] = $productData->id;
 		$data["quantity"] = $productData->quantity;
 
 		sql_setProductStockQuantity($data);
 
-		return json_encode(["result" => "Ok"]);
+		return json_encode(array("result" => "Ok"));
 	}
 }
 
 function setProductPrice($user, $password, $version, $productData, $productCodeField) {
 	if (! testUser($user, $password, $version)) {
-		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
+		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
 	} else {
 		if (! (isset($productCodeField))) {
 			$productCodeField = "M";
@@ -1222,7 +1222,7 @@ function setProductPrice($user, $password, $version, $productData, $productCodeF
 		$productData = json_decode($productData);
 		$productData->id = sql_getProductIdByCode($productData->id, $productData->model, $productCodeField);
 
-		$data = [];
+		$data = array();
 		$data["id"] = $productData->id;
 		$data["price"] = $productData->price;
 
@@ -1232,7 +1232,7 @@ function setProductPrice($user, $password, $version, $productData, $productCodeF
 			insertUpdateProductSpecialPrice($productData->id, $productData->special_price);
 		}
 
-		return json_encode(["result" => "Ok"]);
+		return json_encode(array("result" => "Ok"));
 	}
 }
 
