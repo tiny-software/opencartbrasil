@@ -931,7 +931,7 @@ function getProductsAndOptions($user, $password, $version, $productCodeField, $a
 	}
 
 	if (! testUser($user, $password, $version)) {
-		return json_encode(["result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."]);
+		return json_encode(array("result" => "Error", "errorDetails" => "Usuário não cadastrado ou senha incorreta."));
 	} else {
 		$listProducts = array();
 		$db_products = sql_getProducts();
@@ -952,7 +952,7 @@ function getProductsAndOptions($user, $password, $version, $productCodeField, $a
 					if (! (isset($arOptions[$keyTmp]))) {
 						$arOptions[$keyTmp] = array();
 					}
-					$arOptions[$keyTmp][] = ["option_id" => $keyTmp, "option" => $resultOption["name"], "quantity" => $resultOption["quantity"], "price" => $resultOption["price"], "weight" => $resultOption["weight"]];
+					$arOptions[$keyTmp][] = array("option_id" => $keyTmp, "option" => $resultOption["name"], "quantity" => $resultOption["quantity"], "price" => $resultOption["price"], "weight" => $resultOption["weight"]);
 				}
 
 				$arProductOptions = array();
@@ -1086,7 +1086,7 @@ function insertUpdateProductCategory($productId, $categories) {
 					$data = array();
 					$data["parent_id"] = $parentId;
 					$data["category_description"] = array();
-					$data["category_description"][$languageId] = ["name" => $name];
+					$data["category_description"][$languageId] = array("name" => $name);
 
 					$result = sql_getCategoryByName($name, $parentId);
 					if (count($result) > 0) {
@@ -1144,7 +1144,7 @@ function insertUpdateProduct($user, $password, $version, $productData, $productC
 
 		$languageId = sql_getLanguageId();
 		$data["product_description"] = array();
-		$data["product_description"][$languageId] = ["name" => $productData->description, "description" => $productData->descriptionComplementar];
+		$data["product_description"][$languageId] = array("name" => $productData->description, "description" => $productData->descriptionComplementar);
 
 		$data["image"] = null;
 		$data["product_image"] = array();
@@ -1168,9 +1168,9 @@ function insertUpdateProduct($user, $password, $version, $productData, $productC
 					}
 				} else {
 					if ($version == "2.0.0") {
-						$data["product_image"][] = ["image" => "catalog/" . $value->name];
+						$data["product_image"][] = array("image" => "catalog/" . $value->name);
 					} else {
-						$data["product_image"][] = ["image" => "data/" . $value->name];
+						$data["product_image"][] = array("image" => "data/" . $value->name);
 					}
 				}
 			}
@@ -1270,7 +1270,7 @@ function getOptions($option_id, $descricao, $arOptions) {
 
 				if (count($test) == count($arOptions)) {
 					$productName = str_replace("|-|", "-", $descricaoAux);
-					$arProductOptions[] = ["name" => $productName, "price" => ($productPrice + $valueAux["price"]), "quantity" => $valueAux["quantity"], "weight" => ($productWeight + $valueAux["weight"])];
+					$arProductOptions[] = array("name" => $productName, "price" => ($productPrice + $valueAux["price"]), "quantity" => $valueAux["quantity"], "weight" => ($productWeight + $valueAux["weight"]));
 				}
 			}
 		}
