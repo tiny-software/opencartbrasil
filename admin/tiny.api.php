@@ -274,7 +274,7 @@ function sql_getOrderStatusIdByStatusName($statusName) {
 	$languageId = sql_getLanguageId();
 
 	$db = new DB(DB_DRIVER, DB_HOSTNAME, DB_USERNAME, DB_PASSWORD, DB_DATABASE);
-	$sql = "SELECT s.id AS 'statusId' FROM `" . DB_PREFIX . "order_status` s WHERE s.language_id = '" . $languageId . "' AND LOWER(s.name) = LOWER('" . $statusName . "') LIMIT 1";
+	$sql = "SELECT s.order_status_id AS 'statusId' FROM `" . DB_PREFIX . "order_status` s WHERE s.language_id = '" . $languageId . "' AND LOWER(s.name) = LOWER('" . $statusName . "') LIMIT 1";
 	$query = $db->query($sql);
 	return $query->rows;
 }
