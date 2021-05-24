@@ -1025,7 +1025,7 @@ function updateInvoiceData($user, $password, $version, $invoiceData, $orderNumbe
 
 	$invoiceData = json_decode($invoiceData);
 	$resultOrderStatus = sql_getOrderStatusIdByStatusName($invoiceData->order_status);
-	if (empty($orderStatusId)) {
+	if (empty($resultOrderStatus)) {
 		return json_encode(array("result" => "Error", "errorDetails" => "Situação do pedido " . $invoiceData->order_status . " não encontrada."));
 	}
 
