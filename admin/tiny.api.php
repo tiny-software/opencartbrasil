@@ -1025,9 +1025,13 @@ function updateInvoiceData($user, $password, $version, $invoiceData, $orderNumbe
 
 	$invoiceData = json_decode($invoiceData);
 	$resultOrderStatus = sql_getOrderStatusIdByStatusName($invoiceData->order_status);
-	$orderStatusId = $resultOrderStatus[0]["statusId"];
 	if (empty($orderStatusId)) {
-		return json_encode(array("result" => "Error", "errorDetails" => "Situação do pedido {$invoiceData["order_status"]} não encontrada."));
+		return json_encode(array("result" => "Error", "errorDetails" => "Situação do pedido " . $invoiceData->order_status . " não encontrada."));
+	}
+
+	$orderStatusId = isset($resultOrderStatus[0]["statusId"]) ? $resultOrderStatus[0]["statusId"] : null;
+	if (empty($orderStatusId)) {
+		return json_encode(array("result" => "Error", "errorDetails" => "Situação do pedido " . $invoiceData->order_status . " não encontrada."));
 	}
 	sql_updateInvoiceData($orderNumberField, $orderStatusId, $invoiceData->invoice_url);
 
